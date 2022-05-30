@@ -32,11 +32,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  File _image;
-  List _recognitions;
-  String _model = mobile;
-  double _imageHeight;
-  double _imageWidth;
+  File? _image;
+  List? _recognitions;
+  String? _model = mobile;
+  double? _imageHeight;
+  double? _imageWidth;
   bool _busy = false;
 
   Future predictImagePicker() async {
@@ -49,7 +49,7 @@ class _MyAppState extends State<MyApp> {
     predictImage(File(image.path));
   }
 
-  Future predictImage(File image) async {
+  Future predictImage(File? image) async {
     if (image == null) return;
 
     switch (_model) {
@@ -101,7 +101,7 @@ class _MyAppState extends State<MyApp> {
   Future loadModel() async {
     Tflite.close();
     try {
-      String res;
+      String? res;
       switch (_model) {
         case yolo:
           res = await Tflite.loadModel(
@@ -193,7 +193,9 @@ class _MyAppState extends State<MyApp> {
   Future recognizeImageBinary(File image) async {
     int startTime = new DateTime.now().millisecondsSinceEpoch;
     var imageBytes = (await rootBundle.load(image.path)).buffer;
-    img.Image oriImage = img.decodeJpg(imageBytes.asUint8List());
+    final oriImage = img.decodeJpg(imageBytes.asUint8List());
+    if (oriImage == null) throw Exception('Unable to decode image');
+
     img.Image resizedImage = img.copyResize(oriImage, height: 224, width: 224);
     var recognitions = await Tflite.runModelOnBinary(
       binary: imageToByteListFloat32(resizedImage, 224, 127.5, 127.5),
@@ -305,9 +307,9 @@ class _MyAppState extends State<MyApp> {
     if (_imageHeight == null || _imageWidth == null) return [];
 
     double factorX = screen.width;
-    double factorY = _imageHeight / _imageWidth * screen.width;
+    double factorY = _imageHeight! / _imageWidth! * screen.width;
     Color blue = Color.fromRGBO(37, 213, 253, 1.0);
-    return _recognitions.map((re) {
+    return _recognitions!.map((re) {
       return Positioned(
         left: re["rect"]["x"] * factorX,
         top: re["rect"]["y"] * factorY,
@@ -339,10 +341,10 @@ class _MyAppState extends State<MyApp> {
     if (_imageHeight == null || _imageWidth == null) return [];
 
     double factorX = screen.width;
-    double factorY = _imageHeight / _imageWidth * screen.width;
+    double factorY = _imageHeight! / _imageWidth! * screen.width;
 
     var lists = <Widget>[];
-    _recognitions.forEach((re) {
+    _recognitions!.forEach((re) {
       var color = Color((Random().nextDouble() * 0xFFFFFF).toInt() << 0)
           .withOpacity(1.0);
       var list = re["keypoints"].values.map<Widget>((k) {
@@ -383,16 +385,17 @@ class _MyAppState extends State<MyApp> {
                 decoration: BoxDecoration(
                     image: DecorationImage(
                         alignment: Alignment.topCenter,
-                        image: MemoryImage(_recognitions),
+                        image: MemoryImage(_recognitions! as Uint8List),
                         fit: BoxFit.fill)),
-                child: Opacity(opacity: 0.3, child: Image.file(_image))),
+                child: Opacity(opacity: 0.3, child: Image.file(_image!))),
       ));
     } else {
       stackChildren.add(Positioned(
         top: 0.0,
         left: 0.0,
         width: size.width,
-        child: _image == null ? Text('No image selected.') : Image.file(_image),
+        child:
+            _image == null ? Text('No image selected.') : Image.file(_image!),
       ));
     }
 
@@ -400,7 +403,7 @@ class _MyAppState extends State<MyApp> {
       stackChildren.add(Center(
         child: Column(
           children: _recognitions != null
-              ? _recognitions.map((res) {
+              ? _recognitions!.map((res) {
                   return Text(
                     "${res["index"]} - ${res["label"]}: ${res["confidence"].toStringAsFixed(3)}",
                     style: TextStyle(

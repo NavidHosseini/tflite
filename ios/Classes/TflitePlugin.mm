@@ -1498,4 +1498,3 @@ void close() {
   model = NULL;
   labels.clear();
 }
-
